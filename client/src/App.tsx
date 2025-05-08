@@ -6,6 +6,10 @@ import {Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { User } from './types/types';
 import Login from './components/Login/Login';
 import { LogIn } from './services/usersService';
+import { useSocket } from './hooks/useSocket';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 interface AppState {
   currentUser: User | null;
@@ -23,6 +27,7 @@ interface LoginResponse {
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<AppState['isLoggedIn']>(false);
   const [currentUser, setCurrentUser] = useState<AppState['currentUser']>(null);
+  const socket = useSocket();
   
 
   const navigate = useNavigate();
@@ -35,21 +40,29 @@ function App() {
 }, [isLoggedIn, navigate, currentUser]); 
 
 
-const handleLogin = async (email: string, password: string) => {
-  try {
-      const response: LoginResponse = await LogIn(email, password); // Ajusta el tipo aquí
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const response: LoginResponse = await LogIn(email, password);
       console.log('User logged in:', response);
 
-      const accessToken = response.accessToken; // Ahora puedes acceder a accessToken
-      localStorage.setItem("accessToken", accessToken); // Guarda el token en localStorage
+      const accessToken = response.accessToken;
+      localStorage.setItem('accessToken', accessToken);
 
-      setCurrentUser(response.user); // Actualiza el estado con el usuario
+      setCurrentUser(response.user);
       setIsLoggedIn(true);
-  } catch (error) {
+
+      // Emitir el evento login_emmit al servidor
+      if (socket) {
+        socket.emit('login_emmit', response.user.name);
+        console.log('Evento login_emmit emitido:', response.user.name);
+      } else {
+        console.error('Socket no está inicializado.');
+      }
+    } catch (error) {
       console.error('Login failed:', error);
       alert('Login failed. Please check your credentials.');
-  }
-};
+    }
+  };
 
   return (
         <div className="App" ref={divRef}>
@@ -71,6 +84,7 @@ const handleLogin = async (email: string, password: string) => {
              <Route path="/chat" element={<Chat />} />
              <Route path="*" element={<Navigate to="/" />} />
           </Routes>
+          <ToastContainer />
         </div>
   );
 }

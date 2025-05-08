@@ -1,18 +1,29 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = 'http://localhost:3001';
 
 export const useSocket = (): Socket | null => {
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    socketRef.current = io(SOCKET_URL);
+    // Obtén el token del localStorage
+    const token = localStorage.getItem('accessToken');
 
+    // Inicializa el socket con el token en el handshake
+    const socketInstance = io(SOCKET_URL, {
+      auth: {
+        token, // Envía el token en el handshake
+      },
+    });
+
+    setSocket(socketInstance);
+
+    // Limpia la conexión al desmontar el componente
     return () => {
-      socketRef.current?.disconnect();
+      socketInstance.disconnect();
     };
   }, []);
 
-  return socketRef.current;
+  return socket;
 };

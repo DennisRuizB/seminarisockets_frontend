@@ -4,6 +4,7 @@ import './Chat.css';
 import { io, Socket } from 'socket.io-client';
 import { useLocation } from 'react-router-dom';
 import { User } from '../../types/types';
+import { toast } from 'react-toastify';
 
 interface ChatMessage {
   room: string;
@@ -31,6 +32,14 @@ const Chat: React.FC = () => {
         token,
       },
     });
+
+
+    // Escuchar el evento login_message
+    socketRef.current.on('login_message', (message: string) => {
+      console.log("Ha llegado este mensaje: ",message);
+      toast.info(message); 
+   });
+
 
     socketRef.current.on('receive_message', (data: ChatMessage) => {
       console.log('Mensaje recibido:', data);
